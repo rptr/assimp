@@ -71,10 +71,11 @@ void GetPostProcessingStepInstanceList(std::vector< BaseProcess* >& out);
 // ------------------------------------------------------------------------------------------------
 // Exporter worker function prototypes. Should not be necessary to #ifndef them, it's just a prototype
 void ExportSceneCollada(const char*,IOSystem*, const aiScene*);
-void ExportSceneObj(const char*,IOSystem*, const aiScene*);
-void ExportSceneSTL(const char*,IOSystem*, const aiScene*);
-void ExportScenePly(const char*,IOSystem*, const aiScene*);
+void ExportSceneObj(const char*, IOSystem*, const aiScene*);
+void ExportSceneSTL(const char*, IOSystem*, const aiScene*);
+void ExportScenePly(const char*, IOSystem*, const aiScene*);
 void ExportScene3DS(const char*, IOSystem*, const aiScene*) {}
+void ExportSceneMD2(const char*, IOSystem*, const aiScene*);
 
 // ------------------------------------------------------------------------------------------------
 // global array of all export formats which Assimp supports in its current build
@@ -98,6 +99,10 @@ Exporter::ExportFormatEntry gExporters[] =
 	Exporter::ExportFormatEntry( "ply", "Stanford Polygon Library", "ply" , &ExportScenePly, 
 		aiProcess_PreTransformVertices
 	),
+#endif
+
+#ifndef ASSIMP_BUILD_NO_MD2_EXPORTER
+	Exporter::ExportFormatEntry( "md2", "MD2", "md2", &ExportSceneMD2),
 #endif
 
 //#ifndef ASSIMP_BUILD_NO_3DS_EXPORTER

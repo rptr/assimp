@@ -249,6 +249,9 @@ SET( MD2_SRCS
 	MD2Loader.cpp
 	MD2Loader.h
 	MD2NormalTable.h
+	
+	MD2Exporter.h
+	MD2Exporter.cpp 
 )
 SOURCE_GROUP( MD2 FILES ${MD2_SRCS})
 
