@@ -119,7 +119,7 @@ void MD2Exporter :: WriteHeader(std::ostringstream& out)
     
     head.offsetEnd          = offset;
     
-    printf("export offsets: %u %u %u %u %u %u\n", 
+    printf("export offset ads: %u %u %u %u %u %u\n", 
            head.offsetSkins,
            head.offsetTexCoords,
            head.offsetTriangles,
