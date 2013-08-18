@@ -5,12 +5,14 @@
 
 #include "MD2Exporter.h"
 #include "../include/assimp/version.h"
+#include "MD2FileData.h"
 
 using namespace Assimp;
 namespace Assimp	{
 
 // ----------------------------------------------------------------------
-// Worker function for exporting a scene . Prototyped and registered in Exporter.cpp
+// Worker function for exporting a scene . Prototyped and registered in 
+// Exporter.cpp
 void ExportSceneMD2(const char* pFile, 
                     IOSystem* pIOSystem,
                     const aiScene* pScene)
@@ -21,7 +23,7 @@ void ExportSceneMD2(const char* pFile,
 	// we're still here - export successfully completed. Write both the main 
 	// OBJ file and the material script
 	{
-		boost::scoped_ptr<IOStream> outfile (pIOSystem->Open(pFile,"wt"));
+		boost::scoped_ptr<IOStream> outfile (pIOSystem->Open(pFile,"wtb"));
 		outfile->Write (exporter.mOutput.str().c_str(), 
 		                static_cast<size_t>(exporter.mOutput.tellp()),
 		                1);
@@ -40,13 +42,14 @@ void ExportSceneMD2(const char* pFile,
 } // end of namespace Assimp
 
 
-// ------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
 MD2Exporter :: MD2Exporter (const char* _filename, const aiScene* pScene)
 : filename(_filename)
 , pScene(pScene)
 , endl("\n")
 {
-	// make sure that all formatting happens using the standard, C locale and not the user's current locale
+	// make sure that all formatting happens using the standard, C locale and 
+	// not the user's current locale
 	const std::locale& l = std::locale("C");
 	mOutput.imbue(l);
 	mOutputMat.imbue(l);
@@ -55,10 +58,11 @@ MD2Exporter :: MD2Exporter (const char* _filename, const aiScene* pScene)
 	WriteMaterialFile();
 }
 
-// ------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
 std::string MD2Exporter :: GetMaterialLibName()
 {	
-	// within the Obj file, we use just the relative file name with the path stripped
+	// within the Obj file, we use just the relative file name with the path 
+	// stripped
 	const std::string& s = GetMaterialLibFileName();
 	std::string::size_type il = s.find_last_of("/\\");
 	if (il != std::string::npos) {
@@ -68,18 +72,79 @@ std::string MD2Exporter :: GetMaterialLibName()
 	return s;
 }
 
-// ------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
 std::string MD2Exporter :: GetMaterialLibFileName()
 {	
 	return filename + ".mtl";
 }
 
-// ------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
 void MD2Exporter :: WriteHeader(std::ostringstream& out)
 {
 //	out << "# File produced by Open Asset Import Library (http://www.assimp.sf.net)" << endl;
 //	out << "# (assimp v" << aiGetVersionMajor() << '.' << aiGetVersionMinor() << '.' << aiGetVersionRevision() << ")" << endl  << endl;
-    out << "brah brah brah blah\n";
+
+    // Only write the first mesh
+    aiMesh *mesh = pScene->mMeshes[0];
+
+    MD2::Header head;
+    head.magic              = 844121161;
+    head.version            = 8;
+    head.skinWidth          = 1;
+    head.skinHeight         = 1;
+    head.frameSize          = 1;
+    head.numSkins           = 1;
+    head.numVertices        = mesh->mNumVertices;
+    head.numTexCoords       = mesh->mNumVertices;
+    head.numTriangles       = mesh->mNumFaces;
+    head.numGlCommands      = 0;
+    head.numFrames          = 844121161;
+    
+    // 68 = size of header
+    uint32_t offset = 68;
+    head.offsetSkins        = offset;
+    offset += head.numSkins * 64;
+    
+    head.offsetTexCoords    = offset;
+    offset += head.numTexCoords * 4;
+    
+    head.offsetTriangles    = offset;
+    offset += head.numTriangles * 12;
+
+    head.offsetGlCommands   = offset;
+    offset += 0;
+    
+    head.offsetFrames       = offset;
+    offset += head.numFrames * 30 + head.numVertices * 4;
+    
+    head.offsetEnd          = offset;
+    
+    printf("export offsets: %u %u %u %u %u %u\n", 
+           head.offsetSkins,
+           head.offsetTexCoords,
+           head.offsetTriangles,
+           head.offsetGlCommands,
+           head.offsetFrames,
+           head.offsetEnd);
+
+    WriteInt32 (head.magic);
+    WriteInt32 (head.version);
+    WriteInt32 (head.skinWidth);
+    WriteInt32 (head.skinHeight);
+    WriteInt32 (head.frameSize);
+    WriteInt32 (head.numSkins);
+    WriteInt32 (head.numVertices);
+    WriteInt32 (head.numTexCoords);
+    WriteInt32 (head.numTriangles);
+    WriteInt32 (head.numGlCommands);
+    WriteInt32 (head.numFrames);
+    WriteInt32 (head.offsetSkins);
+    WriteInt32 (head.offsetTexCoords);
+    WriteInt32 (head.offsetTriangles);
+    WriteInt32 (head.offsetFrames);
+    WriteInt32 (head.offsetGlCommands);
+    WriteInt32 (head.offsetEnd);
+
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -278,6 +343,22 @@ void MD2Exporter :: AddNode(const aiNode* nd, const aiMatrix4x4& mParent)
 		AddNode(nd->mChildren[i],mAbs);
 	}
 }
+
+void MD2Exporter :: WriteInt32 (uint32_t i)
+{
+    // MD2 files are little-endian
+#ifdef AI_BUILD_BIG_ENDIAN
+    ByteSwap::Swap4 (&i);
+#endif
+
+    char buf[4] = {(char) i & 0xff,
+                    (char) (i >> 8) & 0xff,
+                    (char) (i >> 16) & 0xff,
+                    (char) (i >> 24) & 0xff};
+
+    mOutput.write (buf, 4);
+}
+
 
 #endif
 #endif

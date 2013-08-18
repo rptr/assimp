@@ -10,7 +10,7 @@
 struct aiScene;
 struct aiNode;
 
-namespace Assimp	
+namespace Assimp
 {
 
 // ----------------------------------------------------------------------------
@@ -66,6 +66,9 @@ private:
 
 	void AddMesh(const aiString& name, const aiMesh* m, const aiMatrix4x4& mat);
 	void AddNode(const aiNode* nd, const aiMatrix4x4& mParent);
+
+    // Binary write
+    void WriteInt32(uint32_t i);
 
 private:
 
